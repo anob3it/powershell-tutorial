@@ -185,7 +185,7 @@ True
 > $true.GetType().Name
 Boolean
 > @() -is [System.Collections.ICollection]
-False
+True
 ```
 
 ## Control structures
@@ -201,11 +201,11 @@ false, indeed
 
 while
 ```powershell
-# Parens around condition and block are not optional
-> if ($true) { "indeed" }
-indeed
-> if ($false) { "wtf!" } else { "false, indeed" }
-false, indeed
+> $i=0
+> while ($i -lt 3) { "i=$($i)"; $i++ }
+i=0
+i=1
+i=2
 ```
 
 ## More strings
