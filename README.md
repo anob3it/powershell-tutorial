@@ -305,7 +305,7 @@ $args
 
 Better be explicit about character encoding or you'll be sorry
 ```powershell
-> Set-Content -Encoding 'UTF8' 'multilingual.txt' 'HellÃ¶, wÃ¤rlden!'
+> Set-Content -Encoding 'UTF8' 'multilingual.txt' 'Hellå, wärlden!'
 > Get-Content -Encoding 'UTF8' 'multilingual.txt'
 ```
 
