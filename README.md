@@ -13,6 +13,10 @@ bla
 3
 ```
 
+### A case for insensitivity
+
+In general powershell is case insensitive (variable names, commands, functions, string comparisons).
+
 ### Comments
 Line comment
 ```powershell
@@ -22,6 +26,14 @@ Line comment
 Block comment
 ```powershell
 > 2 * <# 2 #> 3
+```
+
+### Seek aid
+```powershell
+> get-help write-output
+# prints syntax
+> get-help write-output -online
+# browser opens
 ```
 
 ### Variables and assignment
@@ -65,6 +77,7 @@ False
 arg1
 arg2
 ```
+
 
 ### Strings
 
@@ -270,11 +283,11 @@ Misc
 ```powershell
 > "foo" * 3
 foofoofoo
-> "Blue Ã–yster Cult".ToLower()
-blue Ã¶yster cult
+> "Blue Öyster Cult".ToLower()
+blue öyster cult
 ```
 
-## Files
+## Files and directories
 
 Write a file
 
@@ -298,6 +311,10 @@ Better be explicit about character encoding or you'll be sorry
 
 Current directory
 ```powershell
+> pwd
+Path
+----
+/Users/moebius
 > $PWD
 Path
 ----
@@ -306,7 +323,7 @@ Path
 /Users/moebius
 ```
 
-Get file information
+Get file/directory information
 ```powershell
 > $f = Get-Item test.txt
 > $f.Length
@@ -334,4 +351,221 @@ Found multilingual.txt in /Users/moebius
 Found test.txt in /Users/moebius
 > Get-ChildItem -Path $Home -Filter *.txt -Recurse
 ...
+```
+
+Create a directory
+```powershell
+> New-Item -Path newdir -ItemType directory
+    
+    Directory: /Users/moebius
+
+
+Mode                LastWriteTime     Length Name
+----                -------------     ------ ----
+d----        2017-11-29     09:05            newdir
+```
+
+Resolve paths
+```powershell
+> Resolve-Path .
+   
+Path
+----
+/Users/moebius
+
+> Resolve-Path '*.md'
+Path
+----
+/Users/moebius/README.md
+
+> Resolve-Path '*.md' -Relative
+Path
+----
+./README.md
+
+> Resolve-Path does_not_exist
+Resolve-Path : Cannot find path '/Users/moebius/does_not_exist' because it does not exist.
+```
+
+Combine paths
+```powershell
+> $base = Resolve-Path .
+> Join-Path $base newdir
+/Users/moebius/newdir
+> Join-Path $base does_not_exist
+/Users/moebius/does_not_exist
+> Join-Path . newdir -Resolve
+/Users/moebius/newdir
+> Join-Path . does_not_exist -Resolve
+Join-Path : Cannot find path '/Users/moebius/does_not_exist' because it does not exist.
+```
+
+Taking paths apart
+```powershell
+> $base = Resolve-Path newdir
+> $base.Path
+/Users/moebius/newdir
+> Split-Path $base
+/Users/moebius
+> Split-Path $base -Leaf
+newdir
+> Split-Path . -IsAbsolute
+False
+> [System.IO.Path]::IsPathRooted('.')
+False
+> Split-Path $Home -IsAbsolute
+True
+> [System.IO.Path]::IsPathRooted($Home)
+```
+
+## Functions
+
+Simple function without parameters
+```powershell
+function Get-Foo
+{
+    "foo"
+}
+```
+
+Simple but bad function parameters
+```powershell
+function Get-First-Arg
+{
+    $args[0]
+}
+
+> Get-First-Arg 1
+1
+```
+
+Better function parameters
+```powershell
+function Get-First-Arg
+{
+    param([string]$arg)
+    # use return to be explicit or exit early
+    return $arg
+}
+
+> Get-First-Arg 1
+1
+> Get-First-Arg -arg 1
+1
+> Get-First-Arg -foo 1
+Get-First-Arg : A parameter cannot be found that matches parameter name 'foo'.
+```
+
+Even better function parameters
+```powershell
+function Get-First-Arg
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$arg,
+        [switch]$flag = $false
+    )
+    if ($flag)
+    {
+        return "$($arg) !"
+    }
+    return $arg
+}
+
+> Get-First-Arg -flag
+cmdlet Get-First-Arg at command pipeline position 1
+Supply values for the following parameters:
+arg: Good
+Good!
+```
+
+
+Declare return type for documentation and better aid in development tools
+```powershell
+function Negate-Flag
+{
+    [OutputType([Boolean])]
+    param(
+        [Parameter(Mandatory=$true)]
+        [Boolean]$flag
+    )
+    return -not $flag
+}
+
+> Negate-Flag $true
+False
+```
+
+Parameters also work for scripts.
+
+greet.ps1:
+```powershell
+param(
+    [Parameter(Mandatory=$true)]
+    [string]$who
+)
+
+Write-Output "Hello, $($who)!"
+```
+
+```powershell
+> ./greet.ps1 -who you
+Hello, you!
+```
+
+## Output
+
+Write-Output might not do what you expect
+```powershell
+function Frob
+{
+    Write-Output "hello"
+    return "frob"
+}
+> $x = Frob
+> $x
+hello
+frob
+```
+
+Write-Host is perhaps what you wanted
+```powershell
+function Frob
+{
+    Write-Host "hello"
+    return "frob"
+}
+> $x = Frob
+hello
+> $x
+frob
+```
+
+Add some color
+```powershell
+function Write-Blues
+{
+    Write-Host -BackgroundColor blue "got the blues?"
+}
+> Write-Blues
+got the blues
+```
+
+Error output
+```powershell
+function Buggy
+{
+    Write-Error "darn it"
+    return "ok"
+}
+> Buggy
+Buggy : darn it
+At line:1 char:1
++ Buggy
++ ~~~~~
+    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException
+    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,Funky
+
+ok    
 ```
